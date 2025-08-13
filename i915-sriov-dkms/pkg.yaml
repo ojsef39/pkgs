@@ -19,8 +19,8 @@ steps:
       - |
         # Configure the build for the current kernel
         ./configure
-        # Build the i915 SRIOV modules against the kernel source
-        make -C /src M=$(pwd) modules
+        # Build only the i915 SRIOV module (skip kvmgt since Talos doesn't have KVM support)
+        make -C /src M=$(pwd) i915.ko
     install:
       - |
         mkdir -p /rootfs/usr/lib/modules/$(cat /src/include/config/kernel.release)/
