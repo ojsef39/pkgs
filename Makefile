@@ -1,6 +1,6 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED, PLEASE DO NOT EDIT.
 #
-# Generated on 2025-04-11T11:47:10Z by kres d903dae.
+# Generated on 2025-08-13T14:22:52Z by kres 9f63e23.
 
 # common variables
 
@@ -13,7 +13,7 @@ IMAGE_TAG ?= $(TAG)
 OPERATING_SYSTEM := $(shell uname -s | tr '[:upper:]' '[:lower:]')
 GOARCH := $(shell uname -m | sed 's/x86_64/amd64/' | sed 's/aarch64/arm64/')
 REGISTRY ?= ghcr.io
-USERNAME ?= siderolabs
+USERNAME ?= ojsef39
 REGISTRY_AND_USERNAME ?= $(REGISTRY)/$(USERNAME)
 KRES_IMAGE ?= ghcr.io/siderolabs/kres:latest
 CONFORMANCE_IMAGE ?= ghcr.io/siderolabs/conform:latest
@@ -76,6 +76,7 @@ TARGETS += libseccomp
 TARGETS += libselinux
 TARGETS += libsepol
 TARGETS += liburcu
+TARGETS += i915-sriov-dkms-pkg
 TARGETS += linux-firmware
 TARGETS += lvm2
 TARGETS += mtools
@@ -106,56 +107,6 @@ TARGETS += xdma-driver-pkg
 TARGETS += zfs-pkg
 NONFREE_TARGETS = nonfree-kmod-nvidia-lts-pkg
 NONFREE_TARGETS += nonfree-kmod-nvidia-production-pkg
-
-# help menu
-
-export define HELP_MENU_HEADER
-# Getting Started
-
-To build this project, you must have the following installed:
-
-- git
-- make
-- docker (19.03 or higher)
-
-## Creating a Builder Instance
-
-The build process makes use of experimental Docker features (buildx).
-To enable experimental features, add 'experimental: "true"' to '/etc/docker/daemon.json' on
-Linux or enable experimental features in Docker GUI for Windows or Mac.
-
-To create a builder instance, run:
-
-	docker buildx create --name local --use
-
-If running builds that needs to be cached aggresively create a builder instance with the following:
-
-	docker buildx create --name local --use --config=config.toml
-
-config.toml contents:
-
-[worker.oci]
-  gc = true
-  gckeepstorage = 50000
-
-  [[worker.oci.gcpolicy]]
-    keepBytes = 10737418240
-    keepDuration = 604800
-    filters = [ "type==source.local", "type==exec.cachemount", "type==source.git.checkout"]
-  [[worker.oci.gcpolicy]]
-    all = true
-    keepBytes = 53687091200
-
-If you already have a compatible builder instance, you may use that instead.
-
-## Artifacts
-
-All artifacts will be output to ./$(ARTIFACTS). Images will be tagged with the
-registry "$(REGISTRY)", username "$(USERNAME)", and a dynamic tag (e.g. $(IMAGE):$(IMAGE_TAG)).
-The registry and username can be overridden by exporting REGISTRY, and USERNAME
-respectively.
-
-endef
 
 all: $(TARGETS)  ## Builds all targets defined.
 
@@ -190,7 +141,7 @@ nonfree: $(NONFREE_TARGETS)  ## Builds all nonfree targets defined.
 
 .PHONY: $(TARGETS) $(NONFREE_TARGETS)
 $(TARGETS) $(NONFREE_TARGETS):
-	@$(MAKE) docker-$@ TARGET_ARGS="--tag=$(REGISTRY_AND_USERNAME)/$@:$(TAG) --push=$(PUSH)"
+	@$(MAKE) docker-$@ TARGET_ARGS="--tag=$(REGISTRY)/$@:$(TAG) --push=$(PUSH)"
 
 .PHONY: deps.png
 deps.png:  ## Generates a dependency graph of the Pkgfile.
@@ -203,8 +154,8 @@ kernel-olddefconfig:
 kernel-%:
 	for platform in $(shell echo $(PLATFORM) | tr "," " "); do \
 	  arch=`basename $$platform` ; \
-	  $(MAKE) docker-kernel-prepare PLATFORM=$$platform BUILDKIT_MULTI_PLATFORM=0 TARGET_ARGS="--tag=$(REGISTRY)/$(USERNAME)/kernel:$(TAG)-$$arch --load"; \
-	  docker run --rm -it --entrypoint=/bin/bash -w /src -v $$PWD/kernel/build/config-$$arch:/host/.hostconfig $(REGISTRY)/$(USERNAME)/kernel:$(TAG)-$$arch -c 'cp /host/.hostconfig .config && make $* && cp .config /host/.hostconfig'; \
+	  $(MAKE) docker-kernel-prepare PLATFORM=$$platform BUILDKIT_MULTI_PLATFORM=0 TARGET_ARGS="--tag=$(REGISTRY)/kernel:$(TAG)-$$arch --load"; \
+	  docker run --rm -it --entrypoint=/bin/bash -w /src -v $$PWD/kernel/build/config-$$arch:/host/.hostconfig $(REGISTRY)/kernel:$(TAG)-$$arch -c 'cp /host/.hostconfig .config && make $* && cp .config /host/.hostconfig'; \
 	done
 
 .PHONY: rekres
