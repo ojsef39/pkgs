@@ -23,10 +23,11 @@ steps:
         make -C /src M=$(pwd) i915.ko
     install:
       - |
-        mkdir -p /rootfs/usr/lib/modules/$(cat /src/include/config/kernel.release)/
-        cp /src/modules.order /rootfs/usr/lib/modules/$(cat /src/include/config/kernel.release)/
-        cp /src/modules.builtin /rootfs/usr/lib/modules/$(cat /src/include/config/kernel.release)/
-        cp /src/modules.builtin.modinfo /rootfs/usr/lib/modules/$(cat /src/include/config/kernel.release)/
+        KERNEL_RELEASE=$(cat /src/include/config/kernel.release)
+        mkdir -p /rootfs/usr/lib/modules/${KERNEL_RELEASE}/
+        cp /src/modules.order /rootfs/usr/lib/modules/${KERNEL_RELEASE}/
+        cp /src/modules.builtin /rootfs/usr/lib/modules/${KERNEL_RELEASE}/
+        cp /src/modules.builtin.modinfo /rootfs/usr/lib/modules/${KERNEL_RELEASE}/
 
         make -C /src M=$(pwd) modules_install INSTALL_MOD_PATH=/rootfs/usr INSTALL_MOD_DIR=extras INSTALL_MOD_STRIP=1
     test:
