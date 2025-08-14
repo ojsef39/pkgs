@@ -21,40 +21,33 @@ steps:
         ./configure
         # Only build i915 module, skip kvmgt since Talos doesn't have KVM
         sed -i '/obj-m += kvmgt\.o/d' Makefile
-        # Build only the i915 SRIOV module
+        # Build the i915 SRIOV module
         make -C /src M=$(pwd) i915.ko
     install:
       - |
         KERNEL_RELEASE=$(cat /src/include/config/kernel.release)
-        mkdir -p /rootfs/usr/lib/modules/${KERNEL_RELEASE}/
+        mkdir -p /rootfs/usr/lib/modules/${KERNEL_RELEASE}/extras/
         cp /src/modules.order /rootfs/usr/lib/modules/${KERNEL_RELEASE}/
         cp /src/modules.builtin /rootfs/usr/lib/modules/${KERNEL_RELEASE}/
         cp /src/modules.builtin.modinfo /rootfs/usr/lib/modules/${KERNEL_RELEASE}/
-        # Install the module manually with signing via scripts/sign-file if available
-        mkdir -p /rootfs/usr/lib/modules/${KERNEL_RELEASE}/extras/
-        # Strip first, then sign
+        
+        # Strip and install the module
         if command -v strip >/dev/null 2>&1; then
           strip --strip-debug i915.ko -o /rootfs/usr/lib/modules/${KERNEL_RELEASE}/extras/i915.ko
         else
           cp i915.ko /rootfs/usr/lib/modules/${KERNEL_RELEASE}/extras/
         fi
-        # Sign the stripped module
+        
+        # Sign the module if kernel signing is available
         if [ -f "/src/scripts/sign-file" ] && [ -f "/src/certs/signing_key.pem" ]; then
           /src/scripts/sign-file sha256 /src/certs/signing_key.pem /src/certs/signing_key.x509 /rootfs/usr/lib/modules/${KERNEL_RELEASE}/extras/i915.ko
-          echo "Module stripped and signed"
         fi
     test:
       - |
-        # Debug: see what got installed
-        find /rootfs/usr/lib/modules -name "*.ko" -ls
+        # Verify module is installed in extras directory
+        test -f /rootfs/usr/lib/modules/*/extras/i915.ko
       - |
-        # Verify module exists
-        ls -la /rootfs/usr/lib/modules/*/extras/i915.ko
-      - |
-        # Check if module is signed (debug)
-        echo "Checking module signature..."
-        tail -c 100 /rootfs/usr/lib/modules/*/extras/i915.ko | hexdump -C | tail -5
-        echo "Looking for signature string..."
+        # Verify module is signed
         find /rootfs/usr/lib/modules -name '*.ko' -exec grep -FL '~Module signature appended~' {} \+
       - |
         fhs-validator /rootfs
