@@ -19,11 +19,8 @@ steps:
       - |
         # Configure the build for the current kernel
         ./configure
-        # Remove GVT/kvmgt build since Talos doesn't have KVM support
-        sed -i '/intel_gvt\.o/d' Makefile
-        sed -i '/intel_gvt_mmio_table\.o/d' Makefile
-        sed -i '/include.*gvt\/Makefile/d' Makefile
-        sed -i '/obj-m += kvmgt\.o/d' Makefile
+        # Disable GVT support in config.h since Talos doesn't have KVM
+        echo "#undef CONFIG_DRM_I915_GVT" >> config.h
         # Build the i915 SRIOV module using kernel build system
         make -C /src M=$(pwd) modules
     install:
