@@ -18,7 +18,7 @@ make kernel i915-sriov-dkms-pkg REGISTRY=ghcr.io/ojsef39 PLATFORM=linux/amd64 PU
 echo
 echo '--- BUILD FINISHED ---'
 echo 'This session will remain open. Press Ctrl+d or type exit to close.'
-exec bash -l
+exec bash --noprofile --norc
 "
 
 # The main command that enters the Nix environment and then starts tmux.
