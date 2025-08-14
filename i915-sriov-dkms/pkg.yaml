@@ -21,6 +21,8 @@ steps:
         ./configure
         # Disable GVT support in config.h since Talos doesn't have KVM
         echo "#undef CONFIG_DRM_I915_GVT" >> config.h
+        # Conditionally compile GVT components based on the config flag
+        sed -i 's/^\(i915-y += intel_gvt\.o intel_gvt_mmio_table\.o\)$/ifneq ($(CONFIG_DRM_I915_GVT),)\n\1\nendif/' drivers/gpu/drm/i915/Makefile
         # Build the i915 SRIOV module using kernel build system
         make -C /src M=$(pwd) modules
     install:
