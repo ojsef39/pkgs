@@ -25,6 +25,7 @@ steps:
         sed -i '/intel_gvt_mmio_table\.o/d' drivers/gpu/drm/i915/Makefile
         sed -i '/include.*gvt\/Makefile/d' drivers/gpu/drm/i915/Makefile
         sed -i '/obj-m += kvmgt\.o/d' Makefile
+        sed -i '/gvt\/Makefile/d' Makefile
         # Build the i915 SRIOV module using kernel build system
         make -C /src M=$(pwd) modules
     install:
