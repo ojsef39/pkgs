@@ -21,6 +21,8 @@ steps:
         ./configure
         # Completely disable GVT/kvmgt build since Talos doesn't have KVM
         rm -rf drivers/gpu/drm/i915/gvt/
+        rm -f drivers/gpu/drm/i915/intel_gvt.c
+        rm -f drivers/gpu/drm/i915/intel_gvt_mmio_table.c
         sed -i '/intel_gvt\.o/d' drivers/gpu/drm/i915/Makefile
         sed -i '/intel_gvt_mmio_table\.o/d' drivers/gpu/drm/i915/Makefile
         sed -i '/include.*gvt\/Makefile/d' drivers/gpu/drm/i915/Makefile
