@@ -26,12 +26,9 @@ steps:
     install:
       - |
         KERNEL_RELEASE=$(cat /src/include/config/kernel.release)
-        mkdir -p /rootfs/usr/lib/modules/${KERNEL_RELEASE}/
-        cp /src/modules.order /rootfs/usr/lib/modules/${KERNEL_RELEASE}/
-        cp /src/modules.builtin /rootfs/usr/lib/modules/${KERNEL_RELEASE}/
-        cp /src/modules.builtin.modinfo /rootfs/usr/lib/modules/${KERNEL_RELEASE}/
-
-        make -C /src M=$(pwd) modules_install INSTALL_MOD_PATH=/rootfs/usr INSTALL_MOD_DIR=extras INSTALL_MOD_STRIP=1
+        mkdir -p /rootfs/usr/lib/modules/${KERNEL_RELEASE}/extras/
+        # Install our built i915.ko module
+        cp i915.ko /rootfs/usr/lib/modules/${KERNEL_RELEASE}/extras/
     test:
       - |
         # https://www.kernel.org/doc/html/v4.15/admin-guide/module-signing.html#signed-modules-and-stripping
