@@ -32,16 +32,16 @@ steps:
         cp /src/modules.builtin.modinfo /rootfs/usr/lib/modules/${KERNEL_RELEASE}/
         # Install the module manually with signing via scripts/sign-file if available
         mkdir -p /rootfs/usr/lib/modules/${KERNEL_RELEASE}/extras/
-        if [ -f "/src/scripts/sign-file" ] && [ -f "/src/certs/signing_key.pem" ]; then
-          # Sign the module
-          /src/scripts/sign-file sha256 /src/certs/signing_key.pem /src/certs/signing_key.x509 i915.ko
-          echo "Module signed"
-        fi
-        # Strip and install the module
+        # Strip first, then sign
         if command -v strip >/dev/null 2>&1; then
           strip --strip-debug i915.ko -o /rootfs/usr/lib/modules/${KERNEL_RELEASE}/extras/i915.ko
         else
           cp i915.ko /rootfs/usr/lib/modules/${KERNEL_RELEASE}/extras/
+        fi
+        # Sign the stripped module
+        if [ -f "/src/scripts/sign-file" ] && [ -f "/src/certs/signing_key.pem" ]; then
+          /src/scripts/sign-file sha256 /src/certs/signing_key.pem /src/certs/signing_key.x509 /rootfs/usr/lib/modules/${KERNEL_RELEASE}/extras/i915.ko
+          echo "Module stripped and signed"
         fi
     test:
       - |
