@@ -30,10 +30,19 @@ steps:
         cp /src/modules.order /rootfs/usr/lib/modules/${KERNEL_RELEASE}/
         cp /src/modules.builtin /rootfs/usr/lib/modules/${KERNEL_RELEASE}/
         cp /src/modules.builtin.modinfo /rootfs/usr/lib/modules/${KERNEL_RELEASE}/
-        # Use the kernel's module installation system for proper signing
-        # Create a temporary modules list with just i915
-        echo "i915.ko" > modules.order
-        make -C /src M=$(pwd) modules_install INSTALL_MOD_PATH=/rootfs/usr INSTALL_MOD_DIR=extras INSTALL_MOD_STRIP=1
+        # Install the module manually with signing via scripts/sign-file if available
+        mkdir -p /rootfs/usr/lib/modules/${KERNEL_RELEASE}/extras/
+        if [ -f "/src/scripts/sign-file" ] && [ -f "/src/certs/signing_key.pem" ]; then
+          # Sign the module
+          /src/scripts/sign-file sha256 /src/certs/signing_key.pem /src/certs/signing_key.x509 i915.ko
+          echo "Module signed"
+        fi
+        # Strip and install the module
+        if command -v strip >/dev/null 2>&1; then
+          strip --strip-debug i915.ko -o /rootfs/usr/lib/modules/${KERNEL_RELEASE}/extras/i915.ko
+        else
+          cp i915.ko /rootfs/usr/lib/modules/${KERNEL_RELEASE}/extras/
+        fi
     test:
       - |
         # Debug: see what got installed
@@ -42,7 +51,10 @@ steps:
         # Verify module exists
         ls -la /rootfs/usr/lib/modules/*/extras/i915.ko
       - |
-        # Check if module is signed (allow failure for now)
+        # Check if module is signed (debug)
+        echo "Checking module signature..."
+        tail -c 100 /rootfs/usr/lib/modules/*/extras/i915.ko | hexdump -C | tail -5
+        echo "Looking for signature string..."
         find /rootfs/usr/lib/modules -name '*.ko' -exec grep -FL '~Module signature appended~' {} \+
       - |
         fhs-validator /rootfs
