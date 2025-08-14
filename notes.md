@@ -8,3 +8,6 @@ BUILDKIT_PROGRESS=plain make kernel i915-sriov-dkms-pkg REGISTRY=ghcr.io/ojsef39
 ```
 
 then `cd ../extensions/` and `build-and-deploy-extension.sh`
+
+
+```nh os switch .#nixosConfigurations.josef-test-vm```
