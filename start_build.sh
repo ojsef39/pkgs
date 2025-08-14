@@ -1,46 +1,39 @@
 #!/bin/bash
+# A robust script to start a build inside a tmux session within a Nix environment.
 
-# Exit immediately if a command exits with a non-zero status.
 set -e
 
-# --- Configuration ---
-# The name for your tmux session
 SESSION_NAME="talos-build"
 
-# The command to run inside tmux (now without plain output)
-BUILD_COMMAND="make kernel i915-sriov-dkms-pkg REGISTRY=ghcr.io/ojsef39 PLATFORM=linux/amd64 PUSH=true"
-
-# --- Script Logic ---
-
-echo "Updating the repository..."
+# The command that will be executed inside the tmux session.
+# It's simple because the environment will already be correct.
+# It ends with `exec bash` to leave a clean, usable shell after the build.
+INNER_COMMAND="
+set -e
+echo '--- Updating repository... ---'
 git pull
-
-echo "Starting the build process in a new tmux session named '$SESSION_NAME'..."
-echo "The script will wait here until the build is finished."
-
-# Create a new tmux session and run the build command.
-# The script will block until the tmux session is closed (i.e., the build finishes).
-tmux new-session -s "$SESSION_NAME" "$BUILD_COMMAND"
-
-# --- Post-build ---
-
 echo
-echo "Build process finished."
+echo '--- Starting build... ---'
+make kernel i915-sriov-dkms-pkg REGISTRY=ghcr.io/ojsef39 PLATFORM=linux/amd64 PUSH=true
+echo
+echo '--- BUILD FINISHED ---'
+echo 'This session will remain open. Press Ctrl+d or type exit to close.'
+exec bash -l
+"
 
-# Check if fzf is installed
-if ! command -v fzf &>/dev/null; then
-  echo "fzf is not installed. Skipping log prompt."
-  echo "To view logs manually, run: docker buildx history logs"
-  exit 0
-fi
-
-# Ask the user if they want to see the logs using fzf
-CHOICE=$(printf "No\nYes" | fzf --height 3 --prompt="View build logs? " --border=rounded --margin=1)
-
-# Check the choice and show logs if requested
-if [ "$CHOICE" = "Yes" ]; then
-  echo "Fetching build logs..."
-  docker buildx history logs
+# The main command that enters the Nix environment and then starts tmux.
+# `tmux new-session ...` will create the session and run the INNER_COMMAND.
+# If the session already exists, `tmux attach` will be run instead.
+NIX_TMUX_COMMAND="
+if tmux has-session -t ${SESSION_NAME} 2>/dev/null; then
+  echo 'Build session already exists. Attaching...'
+  tmux attach -t ${SESSION_NAME}
 else
-  echo "Not showing logs. Exiting."
+  echo 'Creating new build session and attaching...'
+  tmux new-session -s ${SESSION_NAME} -n 'Build' \"${INNER_COMMAND}\"
 fi
+"
+
+# --- Main Execution ---
+# Enter the nix develop shell and execute our tmux startup command.
+nix develop -c bash -c "${NIX_TMUX_COMMAND}"
