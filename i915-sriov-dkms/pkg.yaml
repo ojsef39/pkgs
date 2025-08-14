@@ -26,14 +26,16 @@ steps:
     install:
       - |
         KERNEL_RELEASE=$(cat /src/include/config/kernel.release)
-        mkdir -p /rootfs/usr/lib/modules/${KERNEL_RELEASE}/extras/
-        # Install our built i915.ko module using kernel's install system to handle signing
-        make -C /src M=$(pwd) INSTALL_MOD_PATH=/rootfs/usr INSTALL_MOD_DIR=extras INSTALL_MOD_STRIP=1 i915.ko
-        # Copy manually if the above doesn't work
-        if [ ! -f "/rootfs/usr/lib/modules/${KERNEL_RELEASE}/extras/i915.ko" ]; then
-          cp i915.ko /rootfs/usr/lib/modules/${KERNEL_RELEASE}/extras/
-        fi
+        mkdir -p /rootfs/usr/lib/modules/${KERNEL_RELEASE}/
+        cp /src/modules.order /rootfs/usr/lib/modules/${KERNEL_RELEASE}/
+        cp /src/modules.builtin /rootfs/usr/lib/modules/${KERNEL_RELEASE}/
+        cp /src/modules.builtin.modinfo /rootfs/usr/lib/modules/${KERNEL_RELEASE}/
+        # Use the kernel's module installation system for proper signing
+        make -C /src M=$(pwd) modules_install INSTALL_MOD_PATH=/rootfs/usr INSTALL_MOD_DIR=extras INSTALL_MOD_STRIP=1
     test:
+      - |
+        # Debug: see what got installed
+        find /rootfs/usr/lib/modules -name "*.ko" -ls
       - |
         # Verify module exists
         ls -la /rootfs/usr/lib/modules/*/extras/i915.ko
