@@ -31,6 +31,8 @@ steps:
         cp /src/modules.builtin /rootfs/usr/lib/modules/${KERNEL_RELEASE}/
         cp /src/modules.builtin.modinfo /rootfs/usr/lib/modules/${KERNEL_RELEASE}/
         # Use the kernel's module installation system for proper signing
+        # Create a temporary modules list with just i915
+        echo "i915.ko" > modules.order
         make -C /src M=$(pwd) modules_install INSTALL_MOD_PATH=/rootfs/usr INSTALL_MOD_DIR=extras INSTALL_MOD_STRIP=1
     test:
       - |
