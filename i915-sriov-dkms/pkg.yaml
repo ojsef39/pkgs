@@ -42,6 +42,9 @@ steps:
         if [ -f "/src/scripts/sign-file" ] && [ -f "/src/certs/signing_key.pem" ]; then
           /src/scripts/sign-file sha256 /src/certs/signing_key.pem /src/certs/signing_key.x509 /rootfs/usr/lib/modules/${KERNEL_RELEASE}/extras/i915.ko
         fi
+        
+        # Run depmod to update module dependencies and aliases
+        depmod -a -b /rootfs/usr ${KERNEL_RELEASE}
     test:
       - |
         # Verify module is installed in extras directory
